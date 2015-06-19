@@ -1,0 +1,47 @@
+#交叉编译器
+CC = arm-hisiv200
+#CC = arm-hisiv100
+#CC= gcc   -g -DDEBUG
+INCLUDE = -I .    -I ./openssl  
+CFLAGS = -DWITH_DOM -DWITH_OPENSSL  -DWITH_NOIDREF
+
+
+GCC_FLAGS = -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wcast-qual\
+  -Wtraditional\
+  -Wshadow\
+  -Wconversion\
+  -Waggregate-return\
+  -Wmissing-prototypes\
+  -Wnested-externs\
+  -Wall \
+  -Wundef -Wwrite-strings -Wredundant-decls -Winline
+
+CLIENT_OBJS = soapC.o    stdsoap2.o soapClient.o duration.o  onvif_auth.o  onvif_client.o main.o 
+SHARED_OBJS = soapC.o    stdsoap2.o soapClient.o duration.o  onvif_auth.o  onvif_client.o
+
+#X86的库
+#LIBS:=       -L./lib ./lib/libssl.a    ./lib/libcrypto.a    -ldl
+#LIBS:=  -lssl  -lcrypto   -lpthread
+#arm-hisiv200的库
+LIBS:= -L./lib/lib_cross   ./lib/lib_cross/libssl.so  ./lib/lib_cross/libcrypto.so    -dl  -pthread 
+#arm-hisiv200的strip
+STRIP:= $(CC)-linux-strip
+#STRIP:= strip
+all:  client  shared 
+	cp  libonvifClient.so   ../3520-0616/lib/  -f
+	cp  libonvifClient.so   ../3520-0616/onvif/  -f
+	cp  onvif_client.h   ../3520-0616/onvif/  -f
+client: $(CLIENT_OBJS)
+
+#	$(CC)  $(CFLAGS)  -o onvif_client $(INCLUDE) $(CLIENT_OBJS)   $(LIBS)   
+shared:$(CLIENT_OBJS)
+	$(CC)-linux-gcc   $(SHARED_OBJS) $(LIBS) -shared -Wl,-soname, -o  libonvifClient.so
+	$(STRIP) libonvifClient.so
+
+.c.o:
+	$(CC)-linux-gcc $(CFLAGS) $(INCLUDE) -c -o $@ $<
+clean: 
+	
+	rm -f onvif_client.o onvif_client
+
+
